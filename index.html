@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>横波 ↔ 縦波 対応シミュレーション＆クイズ（粒子モデル）</title>
+    <title>横波 ↔ 縦波 変換シミュレーション＆クイズ</title>
     <style>
         :root {
             --primary-color: #3498db;
@@ -303,7 +303,7 @@
                 <div class="control-group">
                     <label>着目する粒子（赤）</label>
                     <div class="hint">
-                        粒子をタップ/ドラッグして、赤い着目粒子を別の粒子へ移動できます（シミュレーション中・クイズ中どちらもOK）。
+                        着目したい媒質をタップすることで色を赤に変更できます。
                     </div>
                 </div>
 
@@ -315,8 +315,8 @@
                     </div>
 
                     <div class="hint">
-                        クイズ開始で「答える側」は全粒子が変位0になります。<br>
-                        1波長につき <b>4個</b>（0が2個＋最大1個＋最小1個）だけ動かせます。<br>
+                        クイズ開始で全媒質の変位0になります。<br>
+                        1波長につき <b>4個</b>だけ媒質を動かせます。<br>
                         ドラッグで「+A / 0 / -A」の3択にスナップし、他は滑らかに補間されます。<br>
                         （クイズ中は <b>動かせる粒子だけ色が変わります</b>）
                     </div>
@@ -332,7 +332,7 @@
 
         <main class="canvas-container">
             <div class="graph-panel" id="panel-top">
-                <div class="panel-label" id="label-top">横波（上）</div>
+                <div class="panel-label" id="label-top">横波</div>
                 <div class="draw-instruction" id="msg-top">クイズ回答側：上下ドラッグで +A/0/-A（色が変わる粒子のみ）</div>
                 <canvas id="cvs-top"></canvas>
                 <div class="quiz-overlay" id="overlay-top">
@@ -342,7 +342,7 @@
             </div>
 
             <div class="graph-panel" id="panel-bottom">
-                <div class="panel-label" id="label-bottom">縦波（下）</div>
+                <div class="panel-label" id="label-bottom">縦波</div>
                 <div class="draw-instruction" id="msg-bottom">クイズ回答側：左右ドラッグで +A/0/-A（色が変わる粒子のみ）</div>
                 <canvas id="cvs-bottom"></canvas>
                 <div class="quiz-overlay" id="overlay-bottom">
@@ -1266,5 +1266,6 @@
         })();
     </script>
 </body>
+
 
 </html>
