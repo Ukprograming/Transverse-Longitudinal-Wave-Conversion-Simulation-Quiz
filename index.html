@@ -1,0 +1,1270 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>横波 ↔ 縦波 対応シミュレーション＆クイズ（粒子モデル）</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #e74c3c;
+            --user-line-color: #2ecc71;
+            --bg-color: #f5f6fa;
+            --panel-bg: #ffffff;
+            --text-color: #2c3e50;
+            --muted: #7f8c8d;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--panel-bg);
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, .1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            flex: 0 0 auto;
+        }
+
+        .status-bar {
+            font-weight: 700;
+            font-size: 1.05rem;
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .app-body {
+            display: flex;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .side-controls {
+            width: 280px;
+            min-width: 260px;
+            background: var(--panel-bg);
+            border-right: 1px solid #ddd;
+            padding: 12px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: stretch;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: .85rem;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 800;
+            transition: background .2s;
+            background: #ecf0f1;
+            color: var(--text-color);
+            font-size: .9rem;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:hover {
+            background: #dfe6e9;
+        }
+
+        button.active {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .btn-check {
+            background: var(--user-line-color);
+            color: #fff;
+        }
+
+        .btn-check:hover {
+            background: #27ae60;
+        }
+
+        .btn-clear {
+            background: #95a5a6;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: var(--secondary-color);
+            color: #fff;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .hint {
+            font-size: .82rem;
+            color: var(--muted);
+            line-height: 1.35;
+            background: #f7f9fb;
+            border: 1px solid #e6ebf0;
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+
+        .canvas-container {
+            flex: 1 1 auto;
+            min-width: 0;
+            min-height: 0;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .graph-panel {
+            background: var(--panel-bg);
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, .05);
+            overflow: hidden;
+            width: 100%;
+            touch-action: none;
+            flex: 1 1 0;
+            min-height: 0;
+            border: 1px solid rgba(0, 0, 0, .04);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+
+        .panel-label {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, .92);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 800;
+            pointer-events: none;
+            border: 1px solid #ddd;
+            z-index: 10;
+        }
+
+        .draw-instruction {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--user-line-color);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: .86rem;
+            display: none;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .draw-instruction.active {
+            display: block;
+        }
+
+        .quiz-overlay {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(44, 62, 80, .92);
+            color: #fff;
+            padding: 18px 18px;
+            border-radius: 12px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+            width: min(420px, 86%);
+        }
+
+        .quiz-overlay.active {
+            display: block;
+        }
+
+        .quiz-result {
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .quiz-detail {
+            font-size: 1rem;
+            opacity: .95;
+            line-height: 1.35;
+        }
+
+        @media (max-width:900px) {
+            .app-body {
+                flex-direction: column;
+            }
+
+            .side-controls {
+                width: 100%;
+                min-width: 0;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+                max-height: 40vh;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="status-bar">
+            <span>波長 λ = <span id="disp-lambda" class="val">6.0</span> m</span>
+            <span>周期 T = <span id="disp-period" class="val">3.0</span> s</span>
+            <span>時刻 t = <span id="disp-time" class="val">0.0</span> s</span>
+            <span>クイズ: <span id="disp-quiz" class="val">なし</span></span>
+        </div>
+    </header>
+
+    <div class="app-body">
+        <aside class="side-controls">
+            <div class="controls">
+                <div class="control-group">
+                    <label>波長 λ (m): <span id="val-lambda">6.0</span></label>
+                    <input type="range" id="inp-lambda" min="3" max="12" step="0.5" value="6">
+                </div>
+
+                <div class="control-group">
+                    <label>周期 T (s): <span id="val-period">3.0</span></label>
+                    <input type="range" id="inp-period" min="1" max="8" step="0.5" value="3">
+                </div>
+
+                <div class="control-group">
+                    <label>時刻 t (s): <span id="val-time">0.0</span></label>
+                    <input type="range" id="inp-time" min="0" max="10" step="0.1" value="0">
+                </div>
+
+                <div class="control-group">
+                    <label>再生コントロール</label>
+                    <div class="btn-group">
+                        <button id="btn-play">Play</button>
+                        <button id="btn-reset">Reset</button>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>着目する粒子（赤）</label>
+                    <div class="hint">
+                        粒子をタップ/ドラッグして、赤い着目粒子を別の粒子へ移動できます（シミュレーション中・クイズ中どちらもOK）。
+                    </div>
+                </div>
+
+                <div class="control-group" style="border-left:2px solid #ddd; padding-left:14px;">
+                    <label>クイズ</label>
+                    <div class="btn-group" style="margin-bottom:6px;">
+                        <button id="btn-quiz-t2l">横波 → 縦波</button>
+                        <button id="btn-quiz-l2t">縦波 → 横波</button>
+                    </div>
+
+                    <div class="hint">
+                        クイズ開始で「答える側」は全粒子が変位0になります。<br>
+                        1波長につき <b>4個</b>（0が2個＋最大1個＋最小1個）だけ動かせます。<br>
+                        ドラッグで「+A / 0 / -A」の3択にスナップし、他は滑らかに補間されます。<br>
+                        （クイズ中は <b>動かせる粒子だけ色が変わります</b>）
+                    </div>
+
+                    <div class="btn-group" style="margin-top:10px;">
+                        <button class="btn-clear" id="btn-clear-answer">回答リセット</button>
+                        <button class="btn-check" id="btn-check">答え合わせ</button>
+                        <button class="btn-danger" id="btn-exit-quiz">クイズ終了</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="canvas-container">
+            <div class="graph-panel" id="panel-top">
+                <div class="panel-label" id="label-top">横波（上）</div>
+                <div class="draw-instruction" id="msg-top">クイズ回答側：上下ドラッグで +A/0/-A（色が変わる粒子のみ）</div>
+                <canvas id="cvs-top"></canvas>
+                <div class="quiz-overlay" id="overlay-top">
+                    <div class="quiz-result" id="overlay-top-title">正解！</div>
+                    <div class="quiz-detail" id="overlay-top-detail"></div>
+                </div>
+            </div>
+
+            <div class="graph-panel" id="panel-bottom">
+                <div class="panel-label" id="label-bottom">縦波（下）</div>
+                <div class="draw-instruction" id="msg-bottom">クイズ回答側：左右ドラッグで +A/0/-A（色が変わる粒子のみ）</div>
+                <canvas id="cvs-bottom"></canvas>
+                <div class="quiz-overlay" id="overlay-bottom">
+                    <div class="quiz-result" id="overlay-bottom-title">正解！</div>
+                    <div class="quiz-detail" id="overlay-bottom-detail"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (() => {
+            // =========================
+            // Colors (要求反映)
+            // =========================
+            const COLORS = {
+                // ★通常の媒質（より緑寄り＆濃い黄緑）
+                medium: '#6BEA3A',
+
+                // ★クイズ回答側で動かせない粒子（薄く）
+                mediumDim: 'rgba(107,234,58,0.22)',
+
+                // ★クイズ回答側で動かせる粒子（さらに濃く）
+                movable: '#19C95B',
+
+                // ★着目粒子（赤）
+                marker: '#ff2d2d',
+
+                grid: '#eef2f7',
+                axis: '#334155',
+                label: '#64748b'
+            };
+
+
+            // =========================
+            // State
+            // =========================
+            const state = {
+                lambda: 6.0,
+                period: 3.0,
+                t: 0.0,
+                isPlaying: false,
+                lastTs: 0,
+
+                // ★ x軸 0..15m に変更
+                xSpan: 15.0,
+
+                // 球数（密度維持）
+                N: 161,
+
+                markerIndex: 20,
+
+                // y表示最小レンジ
+                yHalfMin: 3.0,
+
+                // quiz
+                quizMode: null,       // null | 'T2L' | 'L2T'
+                answerValues: null,   // Float32Array（-1..+1）
+                ctrlMask: null,       // Uint8Array
+                judged: false,
+                judgeResult: null,
+            };
+
+            // =========================
+            // DOM
+            // =========================
+            const el = {
+                dispLambda: document.getElementById('disp-lambda'),
+                dispPeriod: document.getElementById('disp-period'),
+                dispTime: document.getElementById('disp-time'),
+                dispQuiz: document.getElementById('disp-quiz'),
+
+                inpLambda: document.getElementById('inp-lambda'),
+                inpPeriod: document.getElementById('inp-period'),
+                inpTime: document.getElementById('inp-time'),
+                valLambda: document.getElementById('val-lambda'),
+                valPeriod: document.getElementById('val-period'),
+                valTime: document.getElementById('val-time'),
+
+                btnPlay: document.getElementById('btn-play'),
+                btnReset: document.getElementById('btn-reset'),
+
+                btnQuizT2L: document.getElementById('btn-quiz-t2l'),
+                btnQuizL2T: document.getElementById('btn-quiz-l2t'),
+                btnCheck: document.getElementById('btn-check'),
+                btnClearAnswer: document.getElementById('btn-clear-answer'),
+                btnExitQuiz: document.getElementById('btn-exit-quiz'),
+
+                labelTop: document.getElementById('label-top'),
+                labelBottom: document.getElementById('label-bottom'),
+
+                msgTop: document.getElementById('msg-top'),
+                msgBottom: document.getElementById('msg-bottom'),
+
+                cvsTop: document.getElementById('cvs-top'),
+                cvsBottom: document.getElementById('cvs-bottom'),
+                ctxTop: document.getElementById('cvs-top').getContext('2d'),
+                ctxBottom: document.getElementById('cvs-bottom').getContext('2d'),
+
+                overlayTop: document.getElementById('overlay-top'),
+                overlayTopTitle: document.getElementById('overlay-top-title'),
+                overlayTopDetail: document.getElementById('overlay-top-detail'),
+
+                overlayBottom: document.getElementById('overlay-bottom'),
+                overlayBottomTitle: document.getElementById('overlay-bottom-title'),
+                overlayBottomDetail: document.getElementById('overlay-bottom-detail'),
+            };
+
+            // =========================
+            // Helpers
+            // =========================
+            function resizeCanvas(canvas, ctx) {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                const cssW = rect.width;
+                const cssH = rect.height;
+
+                const need =
+                    canvas.width !== Math.round(cssW * dpr) ||
+                    canvas.height !== Math.round(cssH * dpr) ||
+                    canvas.style.width !== cssW + 'px' ||
+                    canvas.style.height !== cssH + 'px';
+
+                if (!need) return;
+                canvas.style.width = cssW + 'px';
+                canvas.style.height = cssH + 'px';
+                canvas.width = Math.round(cssW * dpr);
+                canvas.height = Math.round(cssH * dpr);
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            }
+            function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+
+            // =========================
+            // Coordinate system
+            // - x: 0..xSpan (m)
+            // - y: -yHalf..+yHalf (m), y=0 at canvas center
+            // =========================
+            function makeView(w, h) {
+                const padL = 48;
+                const padR = 18;
+                const padT = 18;
+                const padB = 32;
+
+                const plotW = Math.max(10, w - padL - padR);
+                const plotH = Math.max(10, h - padT - padB);
+
+                const xMin = 0, xMax = state.xSpan;
+
+                const yHalf = Math.max(state.yHalfMin, (plotH / 60));
+                const yMin = -yHalf, yMax = +yHalf;
+
+                const xScale = plotW / (xMax - xMin);
+                const yScale = plotH / (yMax - yMin);
+
+                const xToPx = (x) => padL + (x - xMin) * xScale;
+                const yToPy = (y) => padT + (yMax - y) * yScale;
+                const pxToX = (px) => xMin + (px - padL) / xScale;
+
+                return { padL, padR, padT, padB, plotW, plotH, xMin, xMax, yMin, yMax, yHalf, xScale, yScale, xToPx, yToPy, pxToX };
+            }
+
+            // =========================
+            // Wave math
+            // =========================
+            function omega() { return 2 * Math.PI / state.period; }
+            function k() { return 2 * Math.PI / state.lambda; }
+            function xOf(i) { return (state.xSpan * i / (state.N - 1)); }
+            function uAt(i, t) {
+                const x = xOf(i);
+                return Math.sin(k() * x - omega() * t);
+            }
+
+            // =========================
+            // Quiz movable points: 1 wavelength -> 4 points
+            // (0, π, π/2, 3π/2)
+            // =========================
+            function buildCtrlMask(tSnap) {
+                const N = state.N;
+                const mask = new Uint8Array(N);
+
+                const xMin = 0;
+                const xMax = state.xSpan;
+                const lambda = state.lambda;
+
+                const kk = 2 * Math.PI / lambda;
+                const ww = 2 * Math.PI / state.period;
+                const phi = ww * tSnap;
+
+                const targets = [0, Math.PI, Math.PI / 2, 3 * Math.PI / 2];
+                const picked = new Set();
+
+                const nMin = Math.floor((kk * xMin - (-phi) - 2 * Math.PI) / (2 * Math.PI)) - 1;
+                const nMax = Math.ceil((kk * xMax - (-phi) + 2 * Math.PI) / (2 * Math.PI)) + 1;
+
+                for (let n = nMin; n <= nMax; n++) {
+                    for (const phaseTarget of targets) {
+                        const x = (phi + phaseTarget + 2 * Math.PI * n) / kk;
+                        if (x < xMin - 1e-9 || x > xMax + 1e-9) continue;
+
+                        let idx = Math.round((x / state.xSpan) * (N - 1));
+                        idx = Math.max(0, Math.min(N - 1, idx));
+                        picked.add(idx);
+                    }
+                }
+
+                for (const idx of picked) mask[idx] = 1;
+
+                // 保険
+                if (picked.size < 4) {
+                    const base = Math.round((phi / kk) / state.xSpan * (N - 1));
+                    for (const d of [0, 8, 16, 24]) {
+                        const idx = Math.max(0, Math.min(N - 1, base + d));
+                        mask[idx] = 1;
+                    }
+                }
+                return mask;
+            }
+
+            // =========================
+            // Answer smoothing (Catmull-Rom)
+            // =========================
+            function rebuildAnswerSmooth() {
+                if (!state.answerValues) return;
+                const N = state.N;
+
+                const ctrl = [];
+                for (let i = 0; i < N; i++) {
+                    if (state.ctrlMask && state.ctrlMask[i]) ctrl.push(i);
+                }
+                if (ctrl.length < 4) return;
+
+                const base = new Float32Array(N);
+                for (let i = 0; i < N; i++) {
+                    base[i] = (state.ctrlMask[i] ? state.answerValues[i] : NaN);
+                }
+
+                function getVal(idx) {
+                    idx = clamp(idx, 0, N - 1);
+                    if (Number.isFinite(base[idx])) return base[idx];
+                    let left = idx, right = idx;
+                    while (left >= 0 && !Number.isFinite(base[left])) left--;
+                    while (right < N && !Number.isFinite(base[right])) right++;
+                    if (left < 0 && right >= N) return 0;
+                    if (left < 0) return base[right];
+                    if (right >= N) return base[left];
+                    return (base[left] + base[right]) * 0.5;
+                }
+
+                function catmullRom(p0, p1, p2, p3, t) {
+                    const t2 = t * t, t3 = t2 * t;
+                    return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+                }
+
+                const out = new Float32Array(N);
+                for (let i = 0; i < N; i++) {
+                    out[i] = Number.isFinite(base[i]) ? base[i] : 0;
+                }
+
+                for (let seg = 0; seg < ctrl.length - 1; seg++) {
+                    const i1 = ctrl[seg];
+                    const i2 = ctrl[seg + 1];
+                    const p1 = getVal(i1);
+                    const p2 = getVal(i2);
+                    const i0 = ctrl[Math.max(0, seg - 1)];
+                    const i3 = ctrl[Math.min(ctrl.length - 1, seg + 2)];
+                    const p0 = getVal(i0);
+                    const p3 = getVal(i3);
+
+                    const span = i2 - i1;
+                    for (let i = i1; i <= i2; i++) {
+                        if (state.ctrlMask[i]) { out[i] = base[i]; continue; }
+                        const tt = span === 0 ? 0 : (i - i1) / span;
+                        out[i] = clamp(catmullRom(p0, p1, p2, p3, tt), -1, 1);
+                    }
+                }
+
+                const first = ctrl[0], last = ctrl[ctrl.length - 1];
+                for (let i = 0; i < first; i++) out[i] = out[first];
+                for (let i = last; i < N; i++) out[i] = out[last];
+
+                state.answerValues = out;
+            }
+
+            // =========================
+            // Grid + axes (1m tick)
+            // =========================
+            function drawGridAxes(ctx, w, h) {
+                const v = makeView(w, h);
+
+                ctx.clearRect(0, 0, w, h);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, w, h);
+
+                // grid
+                ctx.save();
+                ctx.strokeStyle = COLORS.grid;
+                ctx.lineWidth = 1;
+
+                for (let xm = 0; xm <= state.xSpan + 1e-9; xm += 1) {
+                    const x = v.xToPx(xm);
+                    ctx.beginPath();
+                    ctx.moveTo(x, v.padT);
+                    ctx.lineTo(x, h - v.padB);
+                    ctx.stroke();
+                }
+                for (let ym = Math.ceil(v.yMin); ym <= Math.floor(v.yMax); ym += 1) {
+                    const y = v.yToPy(ym);
+                    ctx.beginPath();
+                    ctx.moveTo(v.padL, y);
+                    ctx.lineTo(w - v.padR, y);
+                    ctx.stroke();
+                }
+                ctx.restore();
+
+                // axes
+                ctx.save();
+                ctx.strokeStyle = COLORS.axis;
+                ctx.lineWidth = 2;
+
+                const y0 = v.yToPy(0);
+                ctx.beginPath();
+                ctx.moveTo(v.padL, y0);
+                ctx.lineTo(w - v.padR, y0);
+                ctx.stroke();
+
+                const x0 = v.xToPx(0);
+                ctx.beginPath();
+                ctx.moveTo(x0, v.padT);
+                ctx.lineTo(x0, h - v.padB);
+                ctx.stroke();
+                ctx.restore();
+
+                // ticks/labels
+                ctx.save();
+                ctx.fillStyle = COLORS.label;
+                ctx.strokeStyle = COLORS.label;
+                ctx.lineWidth = 1;
+                ctx.font = '12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+
+                // x labels (every 2m)
+                for (let xm = 0; xm <= state.xSpan + 1e-9; xm += 1) {
+                    const x = v.xToPx(xm);
+                    const tick = (xm % 5 === 0) ? 8 : 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y0 - tick);
+                    ctx.lineTo(x, y0 + tick);
+                    ctx.stroke();
+
+                    if (xm % 2 === 0) {
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'top';
+                        ctx.fillText(String(xm), x, h - v.padB + 6);
+                    }
+                }
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText('x (m)', w - v.padR, h - 4);
+
+                // y labels (every 1m)
+                for (let ym = Math.ceil(v.yMin); ym <= Math.floor(v.yMax); ym += 1) {
+                    const y = v.yToPy(ym);
+                    const tick = (ym === 0) ? 8 : 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x0 - tick, y);
+                    ctx.lineTo(x0 + tick, y);
+                    ctx.stroke();
+
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(String(ym), v.padL - 8, y);
+                }
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.fillText('y (m)', x0 + 6, v.padT + 2);
+
+                ctx.restore();
+                return v;
+            }
+
+            function buildCorrectArray(tNow) {
+                const N = state.N;
+                const arr = new Float32Array(N);
+                for (let i = 0; i < N; i++) arr[i] = uAt(i, tNow);
+                return arr;
+            }
+
+            // =========================
+            // Drawing particles (枠線なし)
+            // =========================
+            function drawTransverse(ctx, w, h, uArray, opts) {
+                drawGridAxes(ctx, w, h);
+                const v = makeView(w, h);
+
+                const N = state.N;
+                const r = 6;            // ★球サイズを大きく
+                const amp_m = 1.0;
+
+                // correct overlay (answer check)
+                if (opts.showCorrectOverlay && opts.correctArray) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.35;
+                    ctx.fillStyle = COLORS.primaryFill || '#8bd0ff';
+                    for (let i = 0; i < N; i++) {
+                        const x = v.xToPx(xOf(i));
+                        const y = v.yToPy(opts.correctArray[i] * amp_m);
+                        ctx.beginPath();
+                        ctx.arc(x, y, r, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                for (let i = 0; i < N; i++) {
+                    const x = v.xToPx(xOf(i));
+                    const y = v.yToPy(uArray[i] * amp_m);
+
+                    const canMove = !!(opts.editableMask && opts.editableMask[i]);
+                    const isAnswerSide = !!opts.isQuizAnswerPanel;
+
+                    let fill = COLORS.medium;
+
+                    if (isAnswerSide) {
+                        fill = canMove ? COLORS.movable : COLORS.mediumDim;
+                    }
+
+                    // ★クイズ中は着目粒子を表示しない（回答の邪魔になるため）
+                    if (!state.quizMode && i === state.markerIndex) {
+                        fill = COLORS.marker;
+                    }
+
+
+                    ctx.beginPath();
+                    ctx.fillStyle = fill;
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function drawLongitudinal(ctx, w, h, uArray, opts) {
+                drawGridAxes(ctx, w, h);
+                const v = makeView(w, h);
+
+                const N = state.N;
+                const r = 6;            // ★球サイズを大きく
+                const amp_m = 1.0;
+                const y0 = v.yToPy(0);
+
+                // correct overlay
+                if (opts.showCorrectOverlay && opts.correctArray) {
+                    ctx.save();
+                    ctx.globalAlpha = 0.35;
+                    ctx.fillStyle = COLORS.secondaryFill || '#ffb3b3';
+                    for (let i = 0; i < N; i++) {
+                        const baseX = xOf(i);
+                        const x = v.xToPx(baseX + opts.correctArray[i] * amp_m);
+                        ctx.beginPath();
+                        ctx.arc(x, y0, r, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    ctx.restore();
+                }
+
+                for (let i = 0; i < N; i++) {
+                    const baseX = xOf(i);
+                    const x = v.xToPx(baseX + uArray[i] * amp_m);
+                    const y = y0;
+
+                    const canMove = !!(opts.editableMask && opts.editableMask[i]);
+                    const isAnswerSide = !!opts.isQuizAnswerPanel;
+
+                    let fill = COLORS.medium;
+
+                    if (isAnswerSide) {
+                        fill = canMove ? COLORS.movable : COLORS.mediumDim;
+                    }
+
+                    // ★クイズ中は着目粒子を表示しない
+                    if (!state.quizMode && i === state.markerIndex) {
+                        fill = COLORS.marker;
+                    }
+
+
+                    ctx.beginPath();
+                    ctx.fillStyle = fill;
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // =========================
+            // Main draw dispatcher
+            // =========================
+            function draw() {
+                resizeCanvas(el.cvsTop, el.ctxTop);
+                resizeCanvas(el.cvsBottom, el.ctxBottom);
+
+                const wTop = el.cvsTop.clientWidth, hTop = el.cvsTop.clientHeight;
+                const wBot = el.cvsBottom.clientWidth, hBot = el.cvsBottom.clientHeight;
+
+                const tNow = state.t;
+                const correct = buildCorrectArray(tNow);
+
+                if (state.quizMode === 'T2L') {
+                    el.labelTop.textContent = '横波（問題）';
+                    el.labelBottom.textContent = '縦波（回答）';
+                    el.msgTop.textContent = 'クイズ中：上は問題（編集不可）';
+                    el.msgBottom.textContent = 'クイズ回答：左右ドラッグで +A/0/-A（色が変わる粒子のみ）';
+                } else if (state.quizMode === 'L2T') {
+                    el.labelTop.textContent = '横波（回答）';
+                    el.labelBottom.textContent = '縦波（問題）';
+                    el.msgTop.textContent = 'クイズ回答：上下ドラッグで +A/0/-A（色が変わる粒子のみ）';
+                    el.msgBottom.textContent = 'クイズ中：下は問題（編集不可）';
+                } else {
+                    el.labelTop.textContent = '横波（上）';
+                    el.labelBottom.textContent = '縦波（下）';
+                    el.msgTop.textContent = '操作：赤い粒子を移動';
+                    el.msgBottom.textContent = '操作：赤い粒子を移動';
+                }
+
+                const quizOn = !!state.quizMode;
+                el.msgTop.classList.toggle('active', quizOn);
+                el.msgBottom.classList.toggle('active', quizOn);
+
+                const showOverlay = (state.quizMode && state.judged);
+
+                let topArr, botArr;
+                let topMask = null, botMask = null;
+                let topOverlay = null, botOverlay = null;
+                let topIsAnswer = false, botIsAnswer = false;
+
+                if (!state.quizMode) {
+                    topArr = correct;
+                    botArr = correct;
+                } else {
+                    const ans = state.answerValues;
+                    if (state.quizMode === 'T2L') {
+                        topArr = correct;
+                        botArr = ans;
+                        botMask = state.ctrlMask;
+                        botIsAnswer = true;
+                        if (showOverlay) botOverlay = correct;
+                    } else {
+                        botArr = correct;
+                        topArr = ans;
+                        topMask = state.ctrlMask;
+                        topIsAnswer = true;
+                        if (showOverlay) topOverlay = correct;
+                    }
+                }
+
+                drawTransverse(el.ctxTop, wTop, hTop, topArr, {
+                    editableMask: topMask,
+                    isQuizAnswerPanel: topIsAnswer,
+                    showCorrectOverlay: !!topOverlay,
+                    correctArray: topOverlay
+                });
+
+                drawLongitudinal(el.ctxBottom, wBot, hBot, botArr, {
+                    editableMask: botMask,
+                    isQuizAnswerPanel: botIsAnswer,
+                    showCorrectOverlay: !!botOverlay,
+                    correctArray: botOverlay
+                });
+
+                el.overlayTop.classList.remove('active');
+                el.overlayBottom.classList.remove('active');
+                if (state.quizMode && state.judged) {
+                    const ok = (state.judgeResult === 'correct');
+                    const title = ok ? '正解！' : 'もう一歩…';
+                    const color = ok ? '#2ecc71' : '#e74c3c';
+                    const detail = `正解波形を重ね表示中（t=${state.t.toFixed(1)}s）`;
+
+                    if (state.quizMode === 'L2T') {
+                        el.overlayTopTitle.textContent = title;
+                        el.overlayTopTitle.style.color = color;
+                        el.overlayTopDetail.textContent = detail;
+                        el.overlayTop.classList.add('active');
+                    } else {
+                        el.overlayBottomTitle.textContent = title;
+                        el.overlayBottomTitle.style.color = color;
+                        el.overlayBottomDetail.textContent = detail;
+                        el.overlayBottom.classList.add('active');
+                    }
+                }
+            }
+
+            // =========================
+            // UI update
+            // =========================
+            function updateStatus() {
+                el.valLambda.textContent = state.lambda.toFixed(1);
+                el.valPeriod.textContent = state.period.toFixed(1);
+                el.valTime.textContent = state.t.toFixed(1);
+
+                el.dispLambda.textContent = state.lambda.toFixed(1);
+                el.dispPeriod.textContent = state.period.toFixed(1);
+                el.dispTime.textContent = state.t.toFixed(1);
+
+                let q = 'なし';
+                if (state.quizMode === 'T2L') q = '横波→縦波';
+                if (state.quizMode === 'L2T') q = '縦波→横波';
+                el.dispQuiz.textContent = q;
+
+                el.btnPlay.textContent = state.isPlaying ? 'Pause' : 'Play';
+                el.btnPlay.classList.toggle('active', state.isPlaying);
+
+                el.btnQuizT2L.classList.toggle('active', state.quizMode === 'T2L');
+                el.btnQuizL2T.classList.toggle('active', state.quizMode === 'L2T');
+
+                const quizOn = !!state.quizMode;
+                el.btnCheck.disabled = !quizOn;
+                el.btnClearAnswer.disabled = !quizOn;
+                el.btnExitQuiz.disabled = !quizOn;
+            }
+
+            // =========================
+            // Reset (t=0)
+            // =========================
+            function resetToZero() {
+                state.t = 0.0;
+                el.inpTime.value = "0";
+                state.isPlaying = false;
+
+                state.judged = false;
+                state.judgeResult = null;
+
+                if (state.quizMode) {
+                    state.ctrlMask = buildCtrlMask(state.t);
+                    rebuildAnswerSmooth();
+                }
+                updateStatus();
+            }
+
+            // =========================
+            // Quiz start / exit
+            // =========================
+            function startQuiz(mode) {
+                state.quizMode = mode;
+                state.ctrlMask = buildCtrlMask(state.t);
+
+                state.answerValues = new Float32Array(state.N); // 全部0
+                state.judged = false;
+                state.judgeResult = null;
+            }
+            function exitQuiz() {
+                state.quizMode = null;
+                state.ctrlMask = null;
+                state.answerValues = null;
+                state.judged = false;
+                state.judgeResult = null;
+            }
+            function clearAnswer() {
+                if (!state.quizMode) return;
+                state.answerValues = new Float32Array(state.N);
+                state.judged = false;
+                state.judgeResult = null;
+            }
+
+            // =========================
+            // Check answer
+            // =========================
+            function checkAnswer() {
+                if (!state.quizMode) return;
+
+                const correct = buildCorrectArray(state.t);
+                const ans = state.answerValues;
+
+                let mse = 0;
+                for (let i = 0; i < state.N; i++) {
+                    const d = ans[i] - correct[i];
+                    mse += d * d;
+                }
+                mse /= state.N;
+
+                const ok = mse < 0.12;
+                state.judged = true;
+                state.judgeResult = ok ? 'correct' : 'incorrect';
+            }
+
+            // =========================
+            // Pointer interactions
+            // =========================
+            const pointer = {
+                active: false,
+                pointerId: null,
+                whichPanel: null,
+                mode: null,        // 'marker' | 'answer'
+                startX: 0,
+                grabbedIndex: -1,
+            };
+
+            function canvasInfo(which) {
+                const canvas = (which === 'top') ? el.cvsTop : el.cvsBottom;
+                const rect = canvas.getBoundingClientRect();
+                const w = canvas.clientWidth, h = canvas.clientHeight;
+                const view = makeView(w, h);
+                return { canvas, rect, w, h, view };
+            }
+
+            function indexFromClientX(which, clientX) {
+                const info = canvasInfo(which);
+                const px = clientX - info.rect.left;
+                const x = clamp(info.view.pxToX(px), 0, state.xSpan);
+                const idx = Math.round((x / state.xSpan) * (state.N - 1));
+                return clamp(idx, 0, state.N - 1);
+            }
+
+            function snapTransverse(which, clientY) {
+                const info = canvasInfo(which);
+                const py = clientY - info.rect.top;
+                const y0 = info.view.yToPy(0);
+                const dy = y0 - py;
+                const th = Math.max(10, info.h * 0.10);
+                if (dy > th) return +1;
+                if (dy < -th) return -1;
+                return 0;
+            }
+
+            function snapLongitudinal(which, clientX) {
+                const info = canvasInfo(which);
+                const px = clientX - info.rect.left;
+                const th = Math.max(10, info.w * 0.06);
+                const dx = px - pointer.startX;
+                if (dx > th) return +1;
+                if (dx < -th) return -1;
+                return 0;
+            }
+
+            function tryPick(which, e) {
+                const idx = indexFromClientX(which, e.clientX);
+
+                if (state.quizMode) {
+                    const answerPanel = (state.quizMode === 'T2L') ? 'bottom' : 'top';
+                    if (which === answerPanel && state.ctrlMask && state.ctrlMask[idx]) {
+                        pointer.mode = 'answer';
+                        return idx;
+                    }
+                }
+                pointer.mode = 'marker';
+                return idx;
+            }
+
+            function applyDrag(which, e) {
+                const idx = pointer.grabbedIndex;
+                if (idx < 0) return;
+
+                if (pointer.mode === 'marker') {
+                    const newIdx = indexFromClientX(which, e.clientX);
+                    state.markerIndex = newIdx;
+                    return;
+                }
+
+                if (!state.answerValues) return;
+                if (!state.ctrlMask || !state.ctrlMask[idx]) return;
+
+                const isTransverseAnswer = (state.quizMode === 'L2T');  // top
+                const isLongitudinalAnswer = (state.quizMode === 'T2L'); // bottom
+
+                let v = 0;
+                if (isTransverseAnswer) {
+                    v = snapTransverse(which, e.clientY);
+                } else if (isLongitudinalAnswer) {
+                    v = snapLongitudinal(which, e.clientX);
+                }
+
+                state.answerValues[idx] = v;
+                rebuildAnswerSmooth();
+                state.judged = false;
+                state.judgeResult = null;
+            }
+
+            function onPointerDown(which, e) {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                const info = canvasInfo(which);
+                info.canvas.setPointerCapture(e.pointerId);
+
+                pointer.active = true;
+                pointer.pointerId = e.pointerId;
+                pointer.whichPanel = which;
+
+                pointer.startX = (e.clientX - info.rect.left);
+                pointer.grabbedIndex = tryPick(which, e);
+
+                applyDrag(which, e);
+                e.preventDefault();
+            }
+            function onPointerMove(which, e) {
+                if (!pointer.active || pointer.whichPanel !== which) return;
+                applyDrag(which, e);
+                e.preventDefault();
+            }
+            function onPointerUp(which, e) {
+                pointer.active = false;
+                pointer.pointerId = null;
+                pointer.whichPanel = null;
+                pointer.mode = null;
+                pointer.grabbedIndex = -1;
+                e.preventDefault();
+            }
+
+            el.cvsTop.addEventListener('pointerdown', (e) => onPointerDown('top', e));
+            el.cvsTop.addEventListener('pointermove', (e) => onPointerMove('top', e));
+            el.cvsTop.addEventListener('pointerup', (e) => onPointerUp('top', e));
+            el.cvsTop.addEventListener('pointercancel', (e) => onPointerUp('top', e));
+
+            el.cvsBottom.addEventListener('pointerdown', (e) => onPointerDown('bottom', e));
+            el.cvsBottom.addEventListener('pointermove', (e) => onPointerMove('bottom', e));
+            el.cvsBottom.addEventListener('pointerup', (e) => onPointerUp('bottom', e));
+            el.cvsBottom.addEventListener('pointercancel', (e) => onPointerUp('bottom', e));
+
+            // =========================
+            // Controls
+            // =========================
+            el.btnPlay.addEventListener('click', () => {
+                state.isPlaying = !state.isPlaying;
+                updateStatus();
+            });
+
+            el.btnReset.addEventListener('click', resetToZero);
+
+            el.inpLambda.addEventListener('input', (e) => {
+                state.lambda = parseFloat(e.target.value);
+                if (state.quizMode) {
+                    state.ctrlMask = buildCtrlMask(state.t);
+                    rebuildAnswerSmooth();
+                    state.judged = false;
+                    state.judgeResult = null;
+                }
+                updateStatus();
+            });
+
+            el.inpPeriod.addEventListener('input', (e) => {
+                state.period = parseFloat(e.target.value);
+                if (state.quizMode) {
+                    state.ctrlMask = buildCtrlMask(state.t);
+                    rebuildAnswerSmooth();
+                    state.judged = false;
+                    state.judgeResult = null;
+                }
+                updateStatus();
+            });
+
+            el.inpTime.addEventListener('input', (e) => {
+                state.t = parseFloat(e.target.value);
+                if (state.quizMode) {
+                    state.ctrlMask = buildCtrlMask(state.t);
+                    rebuildAnswerSmooth();
+                    state.judged = false;
+                    state.judgeResult = null;
+                }
+                updateStatus();
+            });
+
+            el.btnQuizT2L.addEventListener('click', () => {
+                if (state.quizMode === 'T2L') exitQuiz();
+                else startQuiz('T2L');
+                updateStatus();
+            });
+
+            el.btnQuizL2T.addEventListener('click', () => {
+                if (state.quizMode === 'L2T') exitQuiz();
+                else startQuiz('L2T');
+                updateStatus();
+            });
+
+            el.btnExitQuiz.addEventListener('click', () => {
+                exitQuiz();
+                updateStatus();
+            });
+
+            el.btnClearAnswer.addEventListener('click', () => {
+                clearAnswer();
+                updateStatus();
+            });
+
+            el.btnCheck.addEventListener('click', () => {
+                checkAnswer();
+                updateStatus();
+            });
+
+            // =========================
+            // Loop
+            // =========================
+            function loop(ts) {
+                if (!state.lastTs) state.lastTs = ts;
+                const dt = (ts - state.lastTs) / 1000;
+                state.lastTs = ts;
+
+                if (state.isPlaying) {
+                    state.t += dt;
+
+                    const tMin = parseFloat(el.inpTime.min);
+                    const tMax = parseFloat(el.inpTime.max);
+                    if (state.t > tMax) state.t = tMin;
+
+                    el.inpTime.value = state.t.toFixed(1);
+
+                    if (state.quizMode) {
+                        state.ctrlMask = buildCtrlMask(state.t);
+                        rebuildAnswerSmooth();
+                    }
+                }
+
+                draw();
+                updateStatus();
+                requestAnimationFrame(loop);
+            }
+
+            // =========================
+            // Init
+            // =========================
+            function init() {
+                el.inpLambda.value = state.lambda;
+                el.inpPeriod.value = state.period;
+                el.inpTime.value = state.t;
+
+                updateStatus();
+                requestAnimationFrame(loop);
+            }
+            init();
+        })();
+    </script>
+</body>
+
+</html>
