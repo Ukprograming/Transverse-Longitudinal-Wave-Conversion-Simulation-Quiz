@@ -261,6 +261,95 @@
                 max-height: 40vh;
             }
         }
+
+        /* ===== Left UI compact & accordion ===== */
+        .side-controls {
+            overflow: hidden;
+            /* 基本はスクロールさせない */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .controls {
+            gap: 10px;
+            /* 全体の隙間を詰める */
+        }
+
+        /* アコーディオン */
+        .acc {
+            border: 1px solid #e6ebf0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .acc summary {
+            list-style: none;
+            cursor: pointer;
+            user-select: none;
+            padding: 10px 10px;
+            font-weight: 900;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .acc summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .acc summary .sub {
+            font-weight: 700;
+            font-size: .8rem;
+            color: var(--muted);
+            margin-left: 10px;
+        }
+
+        .acc .body {
+            padding: 10px;
+            padding-top: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-top: 1px solid #eef2f7;
+        }
+
+        /* 2列ボタン */
+        .btn-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        button {
+            padding: 7px 10px;
+            /* 少しコンパクト */
+            font-size: .88rem;
+        }
+
+        /* ヒントを圧縮：普段は短く、詳細は開ける */
+        .hint.compact {
+            font-size: .78rem;
+            padding: 6px 8px;
+        }
+
+        .hint.compact details summary {
+            cursor: pointer;
+            font-weight: 800;
+            color: var(--muted);
+        }
+
+        .hint.compact details p {
+            margin: 6px 0 0;
+        }
+
+        /* 画面が低いときだけスクロール許可（保険） */
+        @media (max-height: 720px) {
+            .side-controls {
+                overflow-y: auto;
+            }
+        }
     </style>
 </head>
 
@@ -277,55 +366,81 @@
     <div class="app-body">
         <aside class="side-controls">
             <div class="controls">
-                <div class="control-group">
-                    <label>波長 λ (m): <span id="val-lambda">6.0</span></label>
-                    <input type="range" id="inp-lambda" min="3" max="12" step="0.5" value="6">
-                </div>
 
-                <div class="control-group">
-                    <label>周期 T (s): <span id="val-period">3.0</span></label>
-                    <input type="range" id="inp-period" min="1" max="8" step="0.5" value="3">
-                </div>
+                <!-- ===== 基本操作 ===== -->
+                <details class="acc" open>
+                    <summary>
+                        基本操作 <span class="sub">λ / T / t / 再生</span>
+                    </summary>
+                    <div class="body">
 
-                <div class="control-group">
-                    <label>時刻 t (s): <span id="val-time">0.0</span></label>
-                    <input type="range" id="inp-time" min="0" max="10" step="0.1" value="0">
-                </div>
+                        <div class="control-group">
+                            <label>波長 λ (m): <span id="val-lambda">6.0</span></label>
+                            <input type="range" id="inp-lambda" min="3" max="12" step="0.5" value="6">
+                        </div>
 
-                <div class="control-group">
-                    <label>再生コントロール</label>
-                    <div class="btn-group">
-                        <button id="btn-play">Play</button>
-                        <button id="btn-reset">Reset</button>
+                        <div class="control-group">
+                            <label>周期 T (s): <span id="val-period">3.0</span></label>
+                            <input type="range" id="inp-period" min="1" max="8" step="0.5" value="3">
+                        </div>
+
+                        <div class="control-group">
+                            <label>時刻 t (s): <span id="val-time">0.0</span></label>
+                            <input type="range" id="inp-time" min="0" max="10" step="0.1" value="0">
+                        </div>
+
+                        <div class="control-group">
+                            <label>再生</label>
+                            <div class="btn-grid-2">
+                                <button id="btn-play">Play</button>
+                                <button id="btn-reset">Reset</button>
+                            </div>
+                        </div>
+
+                        <div class="hint compact">
+                            <details>
+                                <summary>操作ヒント</summary>
+                                <p>
+                                    通常モード：<b>赤い粒子</b>をタップ/ドラッグで移動して着目点を変えられます。
+                                </p>
+                            </details>
+                        </div>
+
                     </div>
-                </div>
+                </details>
 
-                <div class="control-group">
-                    <label>着目する粒子（赤）</label>
-                    <div class="hint">
-                        着目したい媒質をタップすることで色を赤に変更できます。
-                    </div>
-                </div>
+                <!-- ===== クイズ ===== -->
+                <details class="acc" open>
+                    <summary>
+                        クイズ <span class="sub">出題 / 回答 / 判定</span>
+                    </summary>
+                    <div class="body">
 
-                <div class="control-group" style="border-left:2px solid #ddd; padding-left:14px;">
-                    <label>クイズ</label>
-                    <div class="btn-group" style="margin-bottom:6px;">
-                        <button id="btn-quiz-t2l">横波 → 縦波</button>
-                        <button id="btn-quiz-l2t">縦波 → 横波</button>
-                    </div>
+                        <div class="btn-grid-2">
+                            <button id="btn-quiz-t2l">横波 → 縦波</button>
+                            <button id="btn-quiz-l2t">縦波 → 横波</button>
+                            <button id="btn-quiz-random">ランダム出題</button>
+                            <button class="btn-clear" id="btn-clear-answer">回答リセット</button>
+                        </div>
 
-                    <div class="hint">
-                        クイズ開始で全媒質の変位が0になります。<br>
-                        1波長につき <b>4個</b>だけ媒質（色が異なる媒質）を動かせます。<br>
-                        ドラッグで変位を「+A / 0 / -A」の3つから選択して回答してください。<br>
-                    </div>
+                        <div class="btn-grid-2">
+                            <button class="btn-check" id="btn-check">答え合わせ</button>
+                            <button class="btn-danger" id="btn-exit-quiz">クイズ終了</button>
+                        </div>
 
-                    <div class="btn-group" style="margin-top:10px;">
-                        <button class="btn-clear" id="btn-clear-answer">回答リセット</button>
-                        <button class="btn-check" id="btn-check">答え合わせ</button>
-                        <button class="btn-danger" id="btn-exit-quiz">クイズ終了</button>
+                        <div class="hint compact">
+                            <details>
+                                <summary>ルール（開く）</summary>
+                                <p>
+                                    クイズ開始で全媒質の変位が0になります。<br>
+                                    1波長につき<b>4個</b>だけ動かせます（色が濃い粒子）。<br>
+                                    ドラッグで変位を「+A / 0 / -A」から選んで回答します。
+                                </p>
+                            </details>
+                        </div>
+
                     </div>
-                </div>
+                </details>
             </div>
         </aside>
 
@@ -426,6 +541,7 @@
 
                 btnQuizT2L: document.getElementById('btn-quiz-t2l'),
                 btnQuizL2T: document.getElementById('btn-quiz-l2t'),
+                btnQuizRandom: document.getElementById('btn-quiz-random'),
                 btnCheck: document.getElementById('btn-check'),
                 btnClearAnswer: document.getElementById('btn-clear-answer'),
                 btnExitQuiz: document.getElementById('btn-exit-quiz'),
@@ -754,7 +870,10 @@
                     ctx.restore();
                 }
 
+                // ★まず「赤以外」を描く
                 for (let i = 0; i < N; i++) {
+                    if (!state.quizMode && i === state.markerIndex) continue; // 赤は後で最前面
+
                     const x = v.xToPx(xOf(i));
                     const y = v.yToPy(uArray[i] * amp_m);
 
@@ -762,19 +881,22 @@
                     const isAnswerSide = !!opts.isQuizAnswerPanel;
 
                     let fill = COLORS.medium;
-
-                    if (isAnswerSide) {
-                        fill = canMove ? COLORS.movable : COLORS.mediumDim;
-                    }
-
-                    // ★クイズ中は着目粒子を表示しない（回答の邪魔になるため）
-                    if (!state.quizMode && i === state.markerIndex) {
-                        fill = COLORS.marker;
-                    }
-
+                    if (isAnswerSide) fill = canMove ? COLORS.movable : COLORS.mediumDim;
 
                     ctx.beginPath();
                     ctx.fillStyle = fill;
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // ★最後に「赤（着目粒子）」を描いて最前面に
+                if (!state.quizMode && state.markerIndex >= 0 && state.markerIndex < N) {
+                    const i = state.markerIndex;
+                    const x = v.xToPx(xOf(i));
+                    const y = v.yToPy(uArray[i] * amp_m);
+
+                    ctx.beginPath();
+                    ctx.fillStyle = COLORS.marker;
                     ctx.arc(x, y, r, 0, Math.PI * 2);
                     ctx.fill();
                 }
@@ -804,7 +926,10 @@
                     ctx.restore();
                 }
 
+                // ★まず「赤以外」を描く
                 for (let i = 0; i < N; i++) {
+                    if (!state.quizMode && i === state.markerIndex) continue; // 赤は後で最前面
+
                     const baseX = xOf(i);
                     const x = v.xToPx(baseX + uArray[i] * amp_m);
                     const y = y0;
@@ -813,19 +938,23 @@
                     const isAnswerSide = !!opts.isQuizAnswerPanel;
 
                     let fill = COLORS.medium;
-
-                    if (isAnswerSide) {
-                        fill = canMove ? COLORS.movable : COLORS.mediumDim;
-                    }
-
-                    // ★クイズ中は着目粒子を表示しない
-                    if (!state.quizMode && i === state.markerIndex) {
-                        fill = COLORS.marker;
-                    }
-
+                    if (isAnswerSide) fill = canMove ? COLORS.movable : COLORS.mediumDim;
 
                     ctx.beginPath();
                     ctx.fillStyle = fill;
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // ★最後に「赤（着目粒子）」を描いて最前面に
+                if (!state.quizMode && state.markerIndex >= 0 && state.markerIndex < N) {
+                    const i = state.markerIndex;
+                    const baseX = xOf(i);
+                    const x = v.xToPx(baseX + uArray[i] * amp_m);
+                    const y = y0;
+
+                    ctx.beginPath();
+                    ctx.fillStyle = COLORS.marker;
                     ctx.arc(x, y, r, 0, Math.PI * 2);
                     ctx.fill();
                 }
@@ -986,6 +1115,58 @@
                 state.judged = false;
                 state.judgeResult = null;
             }
+            function setLambdaAndPeriod(lambda, period) {
+                state.lambda = lambda;
+                state.period = period;
+
+                // スライダーUIに反映
+                el.inpLambda.value = String(lambda);
+                el.inpPeriod.value = String(period);
+
+                // 表示更新
+                updateStatus();
+            }
+
+            function randomFromRange(min, max, step) {
+                const n = Math.round((max - min) / step);
+                const k = Math.floor(Math.random() * (n + 1));
+                // 小数誤差対策で丸め
+                return Math.round((min + k * step) * 10) / 10;
+            }
+
+            function startRandomQuiz() {
+                // 1) どちらのクイズかランダム
+                const mode = (Math.random() < 0.5) ? 'T2L' : 'L2T';
+
+                // 2) スライダー範囲に合わせてランダム（いまの設定に合わせる）
+                const lambda = randomFromRange(
+                    parseFloat(el.inpLambda.min),
+                    parseFloat(el.inpLambda.max),
+                    parseFloat(el.inpLambda.step)
+                );
+                const period = randomFromRange(
+                    parseFloat(el.inpPeriod.min),
+                    parseFloat(el.inpPeriod.max),
+                    parseFloat(el.inpPeriod.step)
+                );
+
+                // 3) パラメータを変更して、クイズ開始
+                setLambdaAndPeriod(lambda, period);
+
+                // ★クイズ開始：既存関数を利用
+                startQuiz(mode);
+
+                // 4) ctrlMaskを新パラメータで更新（tは現状のstate.tのまま）
+                state.ctrlMask = buildCtrlMask(state.t);
+
+                // 5) 回答は0にして開始（startQuizでも0にしているが念のため）
+                state.answerValues = new Float32Array(state.N);
+                state.judged = false;
+                state.judgeResult = null;
+
+                updateStatus();
+            }
+
             function exitQuiz() {
                 state.quizMode = null;
                 state.ctrlMask = null;
@@ -1031,6 +1212,9 @@
                 mode: null,        // 'marker' | 'answer'
                 startX: 0,
                 grabbedIndex: -1,
+                dragValue: 0,
+                offsetX: 0,
+                offsetY: 0,
             };
 
             function canvasInfo(which) {
@@ -1049,40 +1233,119 @@
                 return clamp(idx, 0, state.N - 1);
             }
 
-            function snapTransverse(which, clientY) {
-                const info = canvasInfo(which);
-                const py = clientY - info.rect.top;
-                const y0 = info.view.yToPy(0);
-                const dy = y0 - py;
-                const th = Math.max(10, info.h * 0.10);
-                if (dy > th) return +1;
-                if (dy < -th) return -1;
-                return 0;
+            // ★ドラッグ量 → 連続変位（-1..+1）に変換（上下ドラッグ）
+            // ★canvas内px座標 → y(m) に逆変換（view.yToPy の逆）
+            function pyToY(view, py) {
+                // yToPy(y) = padT + (yMax - y) * yScale
+                // => y = yMax - (py - padT) / yScale
+                return view.yMax - (py - view.padT) / view.yScale;
             }
 
-            function snapLongitudinal(which, clientX) {
+            // ★指の位置に粒子を「一致」させる（上下：横波回答）
+            function valueFromPointerTransverse(which, idx, e) {
                 const info = canvasInfo(which);
-                const px = clientX - info.rect.left;
-                const th = Math.max(10, info.w * 0.06);
-                const dx = px - pointer.startX;
-                if (dx > th) return +1;
-                if (dx < -th) return -1;
-                return 0;
+                const py = (e.clientY - info.rect.top) - pointer.offsetY; // オフセット分ずらして一致
+                const y = pyToY(info.view, py);  // これがそのまま変位(m)
+                return clamp(y, -1, 1);
             }
 
-            function tryPick(which, e) {
-                const idx = indexFromClientX(which, e.clientX);
+            // ★指の位置に粒子を「一致」させる（左右：縦波回答）
+            function valueFromPointerLongitudinal(which, idx, e) {
+                const info = canvasInfo(which);
+                const px = (e.clientX - info.rect.left) - pointer.offsetX;
 
-                if (state.quizMode) {
-                    const answerPanel = (state.quizMode === 'T2L') ? 'bottom' : 'top';
-                    if (which === answerPanel && state.ctrlMask && state.ctrlMask[idx]) {
-                        pointer.mode = 'answer';
-                        return idx;
+                const baseX = xOf(idx);
+                const x = clamp(info.view.pxToX(px), 0, state.xSpan); // 指の位置のx(m)
+                const u = x - baseX;                                  // 変位(m)
+                return clamp(u, -1, 1);
+            }
+
+
+            // ★離した瞬間に最寄りの { -1, 0, +1 } にスナップ
+            function quantizeTo3(v) {
+                const candidates = [-1, 0, 1];
+                let best = 0;
+                let bestD = Infinity;
+                for (const c of candidates) {
+                    const d = Math.abs(v - c);
+                    if (d < bestD) { bestD = d; best = c; }
+                }
+                return best;
+            }
+
+
+            function pickNearestMovableAnswerIndex(which, e) {
+                if (!state.quizMode) return -1;
+
+                const answerPanel = (state.quizMode === 'T2L') ? 'bottom' : 'top';
+                if (which !== answerPanel) return -1;
+                if (!state.ctrlMask || !state.answerValues) return -1;
+
+                const info = canvasInfo(which);
+                const px = e.clientX - info.rect.left;
+                const py = e.clientY - info.rect.top;
+
+                // クリック/タッチ判定の許容半径(px)
+                const hitR = 16; // iPadでも拾いやすい値（必要なら 18〜22 まで上げてOK）
+                const hitR2 = hitR * hitR;
+
+                let bestIdx = -1;
+                let bestD2 = Infinity;
+
+                // 回答が横波（上）：x固定、yだけ動く
+                const isTransverseAnswer = (state.quizMode === 'L2T');   // top
+                // 回答が縦波（下）：y固定、xだけ動く
+                const isLongitudinalAnswer = (state.quizMode === 'T2L'); // bottom
+
+                if (isTransverseAnswer) {
+                    // 横波：粒子の画面上の位置は (xOf(i), answerValues[i])
+                    for (let i = 0; i < state.N; i++) {
+                        if (!state.ctrlMask[i]) continue;
+
+                        const x = info.view.xToPx(xOf(i));
+                        const y = info.view.yToPy(state.answerValues[i]); // -1..+1 をそのまま y(m) として描画している前提
+                        const dx = px - x;
+                        const dy = py - y;
+                        const d2 = dx * dx + dy * dy;
+
+                        if (d2 < bestD2) { bestD2 = d2; bestIdx = i; }
+                    }
+                } else if (isLongitudinalAnswer) {
+                    // 縦波：粒子の画面上の位置は (xOf(i)+answerValues[i], y0)
+                    const y0 = info.view.yToPy(0);
+                    for (let i = 0; i < state.N; i++) {
+                        if (!state.ctrlMask[i]) continue;
+
+                        const x = info.view.xToPx(xOf(i) + state.answerValues[i]);
+                        const y = y0;
+                        const dx = px - x;
+                        const dy = py - y;
+                        const d2 = dx * dx + dy * dy;
+
+                        if (d2 < bestD2) { bestD2 = d2; bestIdx = i; }
                     }
                 }
+
+                // 近くに粒子がないなら拾わない
+                if (bestD2 > hitR2) return -1;
+                return bestIdx;
+            }
+
+
+            function tryPick(which, e) {
+                // まず：クイズ回答側なら「見えている粒子」から最寄りを拾う
+                const ansIdx = pickNearestMovableAnswerIndex(which, e);
+                if (ansIdx >= 0) {
+                    pointer.mode = 'answer';
+                    return ansIdx;
+                }
+
+                // それ以外：従来どおり（赤粒子移動用）
+                const idx = indexFromClientX(which, e.clientX);
                 pointer.mode = 'marker';
                 return idx;
             }
+
 
             function applyDrag(which, e) {
                 const idx = pointer.grabbedIndex;
@@ -1094,24 +1357,30 @@
                     return;
                 }
 
+                // answer mode
                 if (!state.answerValues) return;
                 if (!state.ctrlMask || !state.ctrlMask[idx]) return;
 
-                const isTransverseAnswer = (state.quizMode === 'L2T');  // top
-                const isLongitudinalAnswer = (state.quizMode === 'T2L'); // bottom
+                const isTransverseAnswer = (state.quizMode === 'L2T');   // top（上下）
+                const isLongitudinalAnswer = (state.quizMode === 'T2L'); // bottom（左右）
 
                 let v = 0;
                 if (isTransverseAnswer) {
-                    v = snapTransverse(which, e.clientY);
+                    v = valueFromPointerTransverse(which, idx, e);
                 } else if (isLongitudinalAnswer) {
-                    v = snapLongitudinal(which, e.clientX);
+                    v = valueFromPointerLongitudinal(which, idx, e);
                 }
 
+                // ★ドラッグ中は連続値で「指と一致」
+                pointer.dragValue = v;
                 state.answerValues[idx] = v;
+
                 rebuildAnswerSmooth();
                 state.judged = false;
                 state.judgeResult = null;
             }
+
+
 
             function onPointerDown(which, e) {
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -1125,6 +1394,31 @@
                 pointer.startX = (e.clientX - info.rect.left);
                 pointer.grabbedIndex = tryPick(which, e);
 
+                // ★回答モードなら「掴んだ瞬間の指-粒子のズレ」を記録してジャンプを防ぐ
+                if (pointer.mode === 'answer') {
+                    const idx = pointer.grabbedIndex;
+                    const cur = (state.answerValues ? state.answerValues[idx] : 0);
+
+                    const info2 = canvasInfo(which);
+                    const fingerPx = e.clientX - info2.rect.left;
+                    const fingerPy = e.clientY - info2.rect.top;
+
+                    const isTransverseAnswer = (state.quizMode === 'L2T');   // top：上下
+                    const isLongitudinalAnswer = (state.quizMode === 'T2L'); // bottom：左右
+
+                    if (isTransverseAnswer) {
+                        const particlePy = info2.view.yToPy(cur);      // 粒子の現在位置
+                        pointer.offsetY = fingerPy - particlePy;       // 指-粒子
+                        pointer.offsetX = 0;
+                    } else if (isLongitudinalAnswer) {
+                        const baseX = xOf(idx);
+                        const particlePx = info2.view.xToPx(baseX + cur);
+                        pointer.offsetX = fingerPx - particlePx;
+                        pointer.offsetY = 0;
+                    }
+                }
+
+
                 applyDrag(which, e);
                 e.preventDefault();
             }
@@ -1134,13 +1428,27 @@
                 e.preventDefault();
             }
             function onPointerUp(which, e) {
+                // ★離した瞬間に「最寄りの +A/0/-A」へスナップ
+                if (pointer.active && pointer.mode === 'answer') {
+                    const idx = pointer.grabbedIndex;
+                    if (idx >= 0 && state.answerValues && state.ctrlMask && state.ctrlMask[idx]) {
+                        const snapped = quantizeTo3(pointer.dragValue);
+                        state.answerValues[idx] = snapped;
+                        rebuildAnswerSmooth();
+                        state.judged = false;
+                        state.judgeResult = null;
+                    }
+                }
+
                 pointer.active = false;
                 pointer.pointerId = null;
                 pointer.whichPanel = null;
                 pointer.mode = null;
                 pointer.grabbedIndex = -1;
+                pointer.dragValue = 0;
                 e.preventDefault();
             }
+
 
             el.cvsTop.addEventListener('pointerdown', (e) => onPointerDown('top', e));
             el.cvsTop.addEventListener('pointermove', (e) => onPointerMove('top', e));
@@ -1207,6 +1515,10 @@
                 updateStatus();
             });
 
+            el.btnQuizRandom.addEventListener('click', () => {
+                startRandomQuiz();
+            });
+
             el.btnExitQuiz.addEventListener('click', () => {
                 exitQuiz();
                 updateStatus();
@@ -1268,8 +1580,3 @@
 
 
 </html>
-
-
-
-
-
